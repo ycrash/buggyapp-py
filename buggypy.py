@@ -4,6 +4,7 @@ import time
 import random
 import sys
 import gc
+import multiprocessing
 from memory_profiler import profile  # Import memory profiler
 
 # Enable garbage collection debugging
@@ -74,24 +75,37 @@ def infinite_loop():
 
 @profile
 def cpu_stress():
-    """Simulate CPU stress by launching multiple threads that perform busy-waiting."""
+    """Simulate CPU stress by launching multiple processes to stress all CPU cores."""
     print("Starting CPU stress simulation...")
-    
-    # This function will create multiple threads, each busy-waiting (i.e., running an infinite loop).
+
     def stress_cpu():
+        """Infinite loop to keep a CPU core busy."""
         while True:
             pass  # This is a busy wait, which keeps the CPU active.
 
-    # Create multiple threads to cause stress on the CPU.
-    threads = [threading.Thread(target=stress_cpu) for _ in range(4)]  # Start 4 threads.
+    # Get the number of CPU cores available.
+    num_cores = multiprocessing.cpu_count()
+    print(f"Detected {num_cores} CPU cores.")
     
-    # Start all threads.
-    for thread in threads:
-        thread.start()
-    
-    # Wait for the threads to complete (they never will, because of the infinite loops).
-    for thread in threads:
-        thread.join()
+    # Create a pool of processes that will each stress a single core.
+    processes = []
+    for i in range(num_cores):
+        p = multiprocessing.Process(target=stress_cpu)
+        
+        # Optionally set the CPU affinity (if available) to ensure each process runs on a different core.
+        if sys.platform != 'win32':  # Setting affinity is not supported on Windows
+            p.start()
+            p.cpu_affinity([i])  # Affinity to the i-th CPU core
+        
+        processes.append(p)
+
+    # Start all the processes.
+    for p in processes:
+        p.start()
+
+    # Wait for the processes to complete (they never will, because of the infinite loops).
+    for p in processes:
+        p.join()
 
 @profile
 def file_descriptor_leak():
