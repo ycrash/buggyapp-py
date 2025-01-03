@@ -5,6 +5,7 @@ import random
 import sys
 import gc
 import multiprocessing
+import psutil
 from memory_profiler import profile  # Import memory profiler
 
 # Enable garbage collection debugging
@@ -21,6 +22,11 @@ def memory_leak():
         print(f"Leaked {len(leaked_list)} objects to memory.")  # Output how many objects we've leaked.
         time.sleep(0.1)  # Sleep for 0.1 seconds to slow down the leak.
         gc.collect()
+
+def set_cpu_affinity(pid, core_id):
+    """Sets the CPU affinity for a process to a specific core."""
+    p = psutil.Process(pid)  # Create a psutil Process object for the given pid
+    p.cpu_affinity([core_id])  # Set affinity to the specified CPU core
 
 @profile
 def blocked_threads():
@@ -95,7 +101,10 @@ def cpu_stress():
         # Optionally set the CPU affinity (if available) to ensure each process runs on a different core.
         if sys.platform != 'win32':  # Setting affinity is not supported on Windows
             p.start()
-            p.cpu_affinity([i])  # Affinity to the i-th CPU core
+            # Set CPU affinity after the process has started
+            set_cpu_affinity(p.pid, i)  # Set affinity to the i-th CPU core
+        else:
+            p.start()
         
         processes.append(p)
 
