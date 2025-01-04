@@ -99,12 +99,10 @@ def cpu_stress():
         p = multiprocessing.Process(target=stress_cpu)
         
         # Optionally set the CPU affinity (if available) to ensure each process runs on a different core.
-        if sys.platform != 'win32':  # Setting affinity is not supported on Windows
+        if sys.platform != 'win32' and sys.platform != 'darwin':  # Setting affinity is not supported on Windows
             p.start()
             # Set CPU affinity after the process has started
             set_cpu_affinity(p.pid, i)  # Set affinity to the i-th CPU core
-        else:
-            p.start()
         
         processes.append(p)
 
