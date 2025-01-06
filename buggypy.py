@@ -108,7 +108,8 @@ def cpu_stress():
 
     # Start all the processes.
     for p in processes:
-        p.start()
+        if sys.platform == 'win32' or sys.platform == 'darwin':
+            p.start()
 
     # Wait for the processes to complete (they never will, because of the infinite loops).
     for p in processes:
